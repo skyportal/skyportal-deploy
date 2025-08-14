@@ -1,0 +1,3 @@
+# In the extensions/skyportal directory, you can put any file that you want to add (or override) in the "vanilla" SkyPortal.
+# This let's you customize the SkyPortal installation without modifying the original source code
+# which would require a custom branch or fork to have to keep in sync with upstream changes.

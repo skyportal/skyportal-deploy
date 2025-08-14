@@ -1,0 +1,51 @@
+database:
+  database: skyportal
+  host: db
+  port: 5432
+  user: skyportal
+  password: password
+
+app:
+  title: SkyPortal Demo
+  secret_key: "1234" # REPLACE with a secure random key
+
+server:
+  ssl: true # Set to true if you are using HTTPS
+  url: yoururl.com # REPLACE with your public facing URL
+  processes: 12 # Number of copies of the API to run in parallel
+  dedicated_frontend_processes: 8 # How many of these API processes are frontend-only
+  auth:
+    debug_login: false
+    google_oauth2_key: # ADD YOUR GOOGLE OAUTH2 KEY HERE
+    google_oauth2_secret: # ADD YOUR GOOGLE OAUTH2 SECRET HERE
+    google_oauth2_timeout: 15
+  port: 443 # This is the public-facing port (set to 80 if not using SSL)
+
+ports:
+  app: 5000 # This is the port the app listens on internally
+
+services:
+  disabled: # List of services to disable, EDIT THIS AS NEEDED
+  - dask
+  - facility_queue
+  - observation_plan_queue
+  - gcn_service
+  - pdl_service
+  - recurring_apis
+  - reminders
+  - slack
+  - sn_analysis_service
+  - spectral_cube_analysis_service
+  - tns_retrieval_queue
+  - tns_submission_queue
+  - watch_list
+  - openai_analysis_service
+  - ngsf_analysis_service
+
+weather:
+  openweather_api_key: # ADD YOUR OPENWEATHER API KEY HERE
+  refresh_time: 3600.0
+
+invitations:
+  enabled: false # Set to true to enable user account invitations
+  # (This would require email configuration to be set up in the app)

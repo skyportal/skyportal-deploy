@@ -1,0 +1,80 @@
+networks:
+  skyportal:
+    driver: bridge
+
+volumes:
+  thumbnails:
+  persistentdata:
+  dbdata:
+
+services:
+  db:
+    environment:
+      PGDATA: /var/lib/postgresql/data/pgdata
+      POSTGRES_DB: skyportal
+      POSTGRES_PASSWORD: password
+      POSTGRES_USER: skyportal
+    image: postgres:17.5
+    restart: on-failure:3
+    volumes:
+    - dbdata:/var/lib/postgresql/data/pgdata
+    networks:
+    - skyportal
+  web:
+    build:
+      context: .
+      dockerfile: skyportal.Dockerfile
+    image: skyportal:latest
+    depends_on:
+    - db
+    expose:
+    - '5000'
+    labels:
+    - traefik.enable=true
+    - traefik.docker.network=default
+    - traefik.http.routers.skyportal.rule=Host(`yoururl.com`) # REPLACE with your URL
+    - traefik.http.routers.skyportal.entrypoints=web_secure
+    - traefik.http.routers.skyportal.tls.certresolver=skyportal_challenge
+    - traefik.http.services.skyportal.loadBalancer.server.port=5000
+    - traefik.http.middlewares.skyportal_https_redirect.redirectscheme.scheme=https
+    - traefik.http.middlewares.skyportal_https_redirect.redirectscheme.permanent=true
+    - traefik.http.middlewares.skyportal_https_redirect.redirectscheme.port=5000
+    - traefik.http.routers.skyportal_http_catchall.rule=Host(`yoururl.com`) # REPLACE with your URL
+    - traefik.http.routers.skyportal_http_catchall.entrypoints=web
+    - traefik.http.routers.skyportal_http_catchall.middlewares=skyportal_https_redirect
+    restart: on-failure:3
+    volumes:
+    - thumbnails:/skyportal/static/thumbnails
+    - persistentdata:/skyportal/persistentdata
+    networks:
+    - skyportal
+    ports:
+    - "5000:5000"
+  traefik:
+    image: "traefik:v3.4.4"
+    container_name: "traefik"
+    command:
+      - --api.insecure=true
+      - --log.level=DEBUG
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --entrypoints.web.address=:80
+      - --entrypoints.web_secure.address=:443
+      # SkyPortal HTTP(s) challenge resolver
+      - --certificatesresolvers.skyportal_challenge.acme.httpchallenge=true
+      - --certificatesresolvers.skyportal_challenge.acme.httpchallenge.entrypoint=web
+      - --certificatesresolvers.skyportal_challenge.acme.email=youremail@example.com # REPLACE with your email
+      - --certificatesresolvers.skyportal_challenge.acme.storage=/letsencrypt/acme.json
+      # If you add other services, you can add a challenge resolver for them as well
+    ports:
+      # Expose ports for HTTP and HTTPS
+      # (I really suggest sticking to 80 and 443, but you can change these if needed)
+      # (If you do change these, you might have to edit the skyportal.config.yaml file accordingly)
+      - "80:80"
+      - "443:443"
+    volumes:
+      # Create a letsencrypt dir within the folder where the docker-compose file is
+      - "./letsencrypt:/letsencrypt"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    networks:
+      - skyportal
